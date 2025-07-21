@@ -1,7 +1,8 @@
-use anchor_lang::prelude::*;
-
+use crate::error::MultisigError;
 use crate::state::multisig_config::Multisig;
 use crate::state::proposal::Proposal;
+use anchor_lang::prelude::*;
+use anchor_lang::system_program;
 
 #[derive(Accounts)]
 pub struct ExecuteProposal<'info> {
@@ -18,7 +19,7 @@ pub struct ExecuteProposal<'info> {
     pub proposal: Account<'info, Proposal>,
     #[account(
         mut,
-        seeds = [b"vault",multisig.key.as_ref()],
+        seeds = [b"vault",multisig.key().as_ref()],
         bump = multisig.vault_bump
     )]
     pub vault: SystemAccount<'info>,
@@ -30,19 +31,21 @@ pub struct ExecuteProposal<'info> {
 }
 
 impl<'info> ExecuteProposal<'info> {
-    pub fn execute_proposal(&self) -> Result<()> {
+    pub fn execute_proposal(&mut self) -> Result<()> {
+        let proposal = &mut self.proposal;
+        let multisig = &self.multisig;
         require!(!proposal.executed, MultisigError::ProposalAlreadyExecuted);
 
         require!(
-            proposal.votes >= multisig.threshold,
+            proposal.votes >= self.multisig.threshold,
             MultisigError::ThresholdNotMet
         );
 
         let cpi_context = CpiContext::new(
-            ctx.accounts.system_program.to_account_info(),
+            self.system_program.to_account_info(),
             system_program::Transfer {
-                from: ctx.accounts.vault.to_account_info(),
-                to: ctx.accounts.recipient.to_account_info(),
+                from: self.vault.to_account_info(),
+                to: self.recipient.to_account_info(),
             },
         );
 

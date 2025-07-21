@@ -1,7 +1,6 @@
 use anchor_lang::prelude::*;
-
+use crate::error::MultisigError;
 use crate::state::multisig_config::Multisig;
-use crate::state::proposal::Proposal;
 
 #[derive(Accounts)]
 pub struct InitializeMultisig<'info> {
@@ -24,13 +23,13 @@ pub struct InitializeMultisig<'info> {
 }
 
 impl <'info> InitializeMultisig <'info> {
-    pub fn Initialize_multisig(
+    pub fn initialize_multisig(
         &mut self,
         bumps: &InitializeMultisigBumps,
         members: Vec<Pubkey>,
         threshold: u64,
     ) -> Result <()> {
-        require!(threshold > 0 && threshold <= members.len(),MultisigError::InvalidThreshold);
+        require!(threshold > 0 && threshold <= members.len() as u64,MultisigError::InvalidThreshold);
         require!(!members.is_empty(), MultisigError::NoMembers);
 
         self.multisig.set_inner(Multisig {

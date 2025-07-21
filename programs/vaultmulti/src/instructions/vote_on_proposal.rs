@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-
+use crate::error::MultisigError;
 use crate::state::multisig_config::Multisig;
 use crate::state::proposal::Proposal;
 
@@ -22,6 +22,10 @@ pub struct VoteOnProposal<'info> {
 
 impl<'info> VoteOnProposal<'info> {
     pub fn vote_on_proposal(&mut self) -> Result<()> {
+        let proposal = &mut self.proposal;
+        let multisig = & self.multisig;
+        let signer = & self.member;
+        
         require!(
             multisig.members.contains(signer.key),
             MultisigError::NotAMember

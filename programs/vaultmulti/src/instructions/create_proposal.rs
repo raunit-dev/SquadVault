@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-
+use crate::error::MultisigError;
 use crate::state::multisig_config::Multisig;
 use crate::state::proposal::Proposal;
 
@@ -13,7 +13,7 @@ pub struct CreateProposal<'info> {
 
     #[account(
         init,
-        payer = creator,s
+        payer = creator,
         space = 8 + Proposal::INIT_SPACE,
         seeds = [b"proposal",multisig.key().as_ref(),&multisig.proposal_count.to_be_bytes()],
         bump
@@ -21,7 +21,7 @@ pub struct CreateProposal<'info> {
     pub proposal: Account<'info, Proposal>,
     #[account(
         mut,
-        seeds = [b"vault",multisig.key.as_ref()],
+        seeds = [b"vault",multisig.key().as_ref()],
         bump = multisig.vault_bump
     )]
     pub vault: SystemAccount<'info>,
@@ -47,10 +47,10 @@ impl <'info> CreateProposal <'info> {
             bump: bumps.proposal,
         });
 
-        let vault_balance = ctx.accounts.vault.to_account_info().lamports();
+        let vault_balance = self.vault.to_account_info().lamports();
         require!(vault_balance >= amount, MultisigError::InsufficientVaultFunds);
 
-        multisig.proposal_count += 1;
+        self.multisig.proposal_count += 1;
 
 
         Ok(())
