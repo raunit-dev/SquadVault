@@ -1,5 +1,8 @@
 use anchor_lang::prelude::*;
 
+use crate::state::multisig_config::Multisig;
+use crate::state::proposal::Proposal;
+
 #[derive(Accounts)]
 pub struct InitializeMultisig<'info> {
     #[account(mut)]
@@ -18,5 +21,28 @@ pub struct InitializeMultisig<'info> {
     )]
     pub vault: SystemAccount<'info>,
     pub system_program: Program<'info, System>,
+}
+
+impl <'info> InitializeMultisig <'info> {
+    pub fn Initialize_multisig(
+        &mut self,
+        bumps: &InitializeMultisigBumps,
+        members: Vec<Pubkey>,
+        threshold: u64,
+    ) -> Result <()> {
+        require!(threshold > 0 && threshold <= members.len(),MultisigError::InvalidThreshold);
+        require!(!members.is_empty(), MultisigError::NoMembers);
+
+        self.multisig.set_inner(Multisig {
+            members: members,
+            threshold: threshold,
+            proposal_count: 0,
+            bump: bumps.multisig,
+            vault_bump: bumps.vault
+        });
+
+        Ok(())
+
+    }
 }
 
